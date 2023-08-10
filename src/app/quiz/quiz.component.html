@@ -1,0 +1,8 @@
+<app-question *ngFor="let q of questions; index as i" [question]="q"
+              (change)="userAnswers[i] = $event">
+</app-question>
+<div>
+  <button class="inverse large" *ngIf="userAnswers.length == 5" (click)="submit()">
+    Submit
+  </button>
+</div>

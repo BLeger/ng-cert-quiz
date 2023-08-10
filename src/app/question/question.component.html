@@ -1,0 +1,8 @@
+<p [innerHTML]="question.question"></p>
+<div>
+  <button (click)="buttonClicked(answer)"
+          [class]="getButtonClass(answer)"
+          *ngFor="let answer of question.all_answers"
+          [innerHTML]="answer">
+  </button>
+</div>

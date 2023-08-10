@@ -1,0 +1,11 @@
+<app-question *ngFor="let q of data.questions; index as i" [question]="q"
+              [userAnswer]="data.answers[i]" [correctAnswer]="q.correct_answer">
+</app-question>
+<div>
+  SCORE: {{data.score}} OUT OF 5
+</div>
+<div>
+  <button class="inverse large" routerLink="/">
+    Create a new quiz
+  </button>
+</div>
