@@ -1,0 +1,13 @@
+<input
+  type="text"
+  name="filter"
+  [(ngModel)]="filter"
+  (ngModelChange)="updateOptions()"
+  (focus)="onFocus()"
+  (blur)="onBlur()"
+/>
+<div [hidden]="!isPanelOpen">
+  <button *ngFor="let opt of options$ | async" (click)="select(opt)">
+    <span [innerHTML]="opt | highlight : filter"></span>
+  </button>
+</div>

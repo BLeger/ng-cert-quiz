@@ -1,23 +1,27 @@
-import {Component} from '@angular/core';
-import {Category, Difficulty, Question} from '../data.models';
-import {Observable} from 'rxjs';
-import {QuizService} from '../quiz.service';
+import { Component } from '@angular/core';
+import { Observable } from 'rxjs';
+import { Category, Difficulty, Question } from '../data.models';
+import { QuizService } from '../quiz.service';
 
 @Component({
   selector: 'app-quiz-maker',
   templateUrl: './quiz-maker.component.html',
-  styleUrls: ['./quiz-maker.component.css']
+  styleUrls: ['./quiz-maker.component.css'],
 })
 export class QuizMakerComponent {
-
   categories$: Observable<Category[]>;
   questions$!: Observable<Question[]>;
 
+  transformerFn = (category: Category) => category.name;
+
   constructor(protected quizService: QuizService) {
-    this.categories$ = quizService.getAllCategories()
+    this.categories$ = quizService.getAllCategories();
   }
 
   createQuiz(cat: string, difficulty: string): void {
-    this.questions$ = this.quizService.createQuiz(cat, difficulty as Difficulty);
+    this.questions$ = this.quizService.createQuiz(
+      cat,
+      difficulty as Difficulty
+    );
   }
 }

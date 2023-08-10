@@ -2,20 +2,34 @@
   <div class="col-sm-11">
     <select #category id="categorySelect">
       <option>Select category</option>
-      <option [value]="category.id" *ngFor="let category of categories$ | async">
-        {{category.name}}
+      <option
+        [value]="category.id"
+        *ngFor="let category of categories$ | async"
+      >
+        {{ category.name }}
       </option>
     </select>
+
+    <app-auto-filter
+      [dataset]="categories$ | async"
+      [transformer]="transformerFn"
+    ></app-auto-filter>
+
     <select #difficulty id="difficultySelect">
       <option>Select difficulty</option>
       <option>Easy</option>
       <option>Medium</option>
       <option>Hard</option>
     </select>
-    <button class="primary" id="createBtn" (click)="createQuiz(category.value, difficulty.value)">Create</button>
+    <button
+      class="primary"
+      id="createBtn"
+      (click)="createQuiz(category.value, difficulty.value)"
+    >
+      Create
+    </button>
   </div>
-
 </div>
 <div class="row">
-   <app-quiz [questions]="questions$ | async" ></app-quiz>
+  <app-quiz [questions]="questions$ | async"></app-quiz>
 </div>
