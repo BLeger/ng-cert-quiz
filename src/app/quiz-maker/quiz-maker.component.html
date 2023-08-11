@@ -1,6 +1,6 @@
 <div class="row">
   <div class="col-sm-11">
-    <select #category id="categorySelect">
+    <!--<select #category id="categorySelect">
       <option>Select category</option>
       <option
         [value]="category.id"
@@ -8,24 +8,35 @@
       >
         {{ category.name }}
       </option>
-    </select>
+    </select>-->
 
     <app-auto-filter
+      #categoryFilter
+      id="categoryFilter"
       [dataset]="categories$ | async"
       [transformer]="transformerFn"
       placeholder="Select category"
     ></app-auto-filter>
 
-    <select #difficulty id="difficultySelect">
+    <app-auto-filter
+      #difficultyFilter
+      id="difficultyFilter"
+      [dataset]="difficulties"
+      placeholder="Select difficulty"
+    ></app-auto-filter>
+
+    <!-- <select #difficulty id="difficultySelect">
       <option>Select difficulty</option>
       <option>Easy</option>
       <option>Medium</option>
       <option>Hard</option>
-    </select>
+    </select> -->
     <button
       class="primary"
       id="createBtn"
-      (click)="createQuiz(category.value, difficulty.value)"
+      (click)="
+        createQuiz('' + categoryFilter.value?.id, difficultyFilter.value)
+      "
     >
       Create
     </button>

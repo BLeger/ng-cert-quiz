@@ -44,6 +44,9 @@ export class AutoFilterComponent<T> implements OnChanges {
     this._value = value;
     this.selectedChange.emit(value);
   }
+  public get value(): T | undefined {
+    return this._value;
+  }
 
   @Input({ required: true }) dataset!: T[] | null;
   @Input() placeholder = '';
