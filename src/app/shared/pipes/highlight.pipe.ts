@@ -20,7 +20,7 @@ export class HighlightPipe implements PipeTransform {
 
   private highlight(value: string, highlight: string): string {
     // Regex qui capture la portion de texte à highlight
-    const regex = new RegExp(`(${highlight})`);
+    const regex = new RegExp(`(${highlight})`, 'gi');
 
     // Remplace la capture par elle même entourée de <b>
     return value.replace(regex, `<b>$1</b>`);

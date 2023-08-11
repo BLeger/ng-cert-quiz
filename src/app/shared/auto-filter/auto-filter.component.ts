@@ -1,21 +1,29 @@
 import {
   Component,
+  ElementRef,
   EventEmitter,
+  HostListener,
   Input,
   OnChanges,
-  OnInit,
   Output,
   SimpleChanges,
 } from '@angular/core';
-import { Subject, tap, timer } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
+
+// TODO :
+// * Améliorer le positionnement CSS
+// * Ne plus avoir besoin du timer au blur => ok
+// * Donner accès à l'input (ControlValueAccessor ? ou directive ?)
+// * Mieux détecter l'arrivée du dataset
 
 @Component({
   selector: 'app-auto-filter',
   templateUrl: './auto-filter.component.html',
   styleUrls: ['./auto-filter.component.css'],
 })
-export class AutoFilterComponent<T> implements OnInit, OnChanges {
+export class AutoFilterComponent<T> implements OnChanges {
   _isPanelOpen = false;
+  private init = false;
 
   public get isPanelOpen(): boolean {
     return this._isPanelOpen;
@@ -26,25 +34,37 @@ export class AutoFilterComponent<T> implements OnInit, OnChanges {
     this._isPanelOpen ? this.opened.emit() : this.closed.emit();
   }
 
-  private subj = new Subject<string[]>();
+  private subj = new BehaviorSubject<string[]>([]);
   options$ = this.subj.asObservable();
 
   public filter = '';
-  private value?: T;
+
+  private _value?: T;
+  private set value(value: T | undefined) {
+    this._value = value;
+    this.selectedChange.emit(value);
+  }
 
   @Input({ required: true }) dataset!: T[] | null;
+  @Input() placeholder = '';
 
-  @Input() transformer: (option: T) => string = (option: T) => '';
+  @Input() transformer: (option: T) => string = (option: T) => `${option}`;
 
   @Output() opened = new EventEmitter<void>();
   @Output() closed = new EventEmitter<void>();
 
-  @Output() selected = new EventEmitter<T>();
+  @Input() selected?: T;
+  @Output() selectedChange = new EventEmitter<T>();
 
-  ngOnInit(): void {}
+  constructor(private elementRef: ElementRef) {}
 
   ngOnChanges(changes: SimpleChanges): void {
-    this.updateOptions();
+    if (changes['dataset']) {
+      if (!this.init) {
+        this.init = true;
+      }
+      this.updateOptions();
+    }
   }
 
   updateOptions(): void {
@@ -55,24 +75,35 @@ export class AutoFilterComponent<T> implements OnInit, OnChanges {
     );
   }
 
-  select(option: string): void {
-    this.filter = option;
+  select(filter: string): void {
+    this.filter = filter;
     this.updateOptions();
-    this.value = this.dataset?.find((opt) => this.transformer(opt) === option);
-    this.selected.emit(this.value);
+    this.value = this.findOptionsFromFilter(filter);
+    this.isPanelOpen = false;
   }
 
   onFocus(): void {
     this.isPanelOpen = true;
   }
 
-  onBlur(): void {
-    timer(100)
-      .pipe(
-        tap(() => {
-          this.isPanelOpen = false;
-        })
-      )
-      .subscribe();
+  private findOptionsFromFilter(filter: string): T | undefined {
+    return this.dataset?.find((opt) => this.transformer(opt) === filter);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onClick(event: any) {
+    // Si on clic en dehors du composant
+    if (
+      this.isPanelOpen &&
+      !this.elementRef.nativeElement.contains(event.target)
+    ) {
+      this.isPanelOpen = false;
+      const option = this.findOptionsFromFilter(this.filter);
+      if (option) {
+        this.value = option;
+      } else {
+        this.filter = '';
+      }
+    }
   }
 }

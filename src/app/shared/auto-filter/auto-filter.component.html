@@ -1,13 +1,17 @@
-<input
-  type="text"
-  name="filter"
-  [(ngModel)]="filter"
-  (ngModelChange)="updateOptions()"
-  (focus)="onFocus()"
-  (blur)="onBlur()"
-/>
-<div [hidden]="!isPanelOpen">
-  <button *ngFor="let opt of options$ | async" (click)="select(opt)">
-    <span [innerHTML]="opt | highlight : filter"></span>
-  </button>
+<div class="autocomplete-wrapper">
+  <input
+    type="text"
+    name="filter"
+    [(ngModel)]="filter"
+    (ngModelChange)="updateOptions()"
+    (focus)="onFocus()"
+    [placeholder]="placeholder"
+  />
+  <div *ngIf="isPanelOpen" class="autocomplete-panel">
+    <button
+      *ngFor="let opt of options$ | async"
+      (click)="select(opt)"
+      [innerHTML]="opt | highlight : filter"
+    ></button>
+  </div>
 </div>

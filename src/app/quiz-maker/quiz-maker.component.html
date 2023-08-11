@@ -13,6 +13,7 @@
     <app-auto-filter
       [dataset]="categories$ | async"
       [transformer]="transformerFn"
+      placeholder="Select category"
     ></app-auto-filter>
 
     <select #difficulty id="difficultySelect">
