@@ -42,6 +42,7 @@
 <div class="row">
   <app-quiz
     [questions]="questions$ | async"
-    (changeQuestionAsked)="changeQuestion($event)"
+    [categoryId]="currentCategory"
+    [difficulty]="currentDifficulty"
   ></app-quiz>
 </div>

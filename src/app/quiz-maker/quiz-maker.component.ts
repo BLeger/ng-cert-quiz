@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { Observable, combineLatest, map } from 'rxjs';
+import { Observable } from 'rxjs';
 import { Category, Difficulty, Question } from '../data.models';
 import { QuizService } from '../quiz.service';
 
@@ -38,23 +38,8 @@ export class QuizMakerComponent {
     this.currentDifficulty = difficulty as Difficulty;
 
     this.questions$ = this.quizService.createQuiz(
-      '' + this.currentCategory,
+      this.currentCategory!,
       this.currentDifficulty
-    );
-  }
-
-  changeQuestion(index: number): void {
-    this.questions$ = combineLatest([
-      this.questions$,
-      this.quizService.getQuestion(
-        '' + this.currentCategory,
-        this.currentDifficulty!
-      ),
-    ]).pipe(
-      map(([questions, newQuestion]) => {
-        questions[index] = newQuestion[0];
-        return questions;
-      })
     );
   }
 }

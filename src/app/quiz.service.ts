@@ -28,17 +28,19 @@ export class QuizService {
   }
 
   createQuiz(
-    categoryId: string,
+    categoryId: number,
     difficulty: Difficulty
   ): Observable<Question[]> {
     return this.getQuestions(categoryId, difficulty, 5);
   }
 
   getQuestion(
-    categoryId: string,
+    categoryId: number,
     difficulty: Difficulty
-  ): Observable<Question[]> {
-    return this.getQuestions(categoryId, difficulty, 1);
+  ): Observable<Question | undefined> {
+    return this.getQuestions(categoryId, difficulty, 1).pipe(
+      map((questions) => (questions.length > 0 ? questions[0] : undefined))
+    );
   }
 
   computeScore(questions: Question[], answers: string[]): void {
@@ -54,7 +56,7 @@ export class QuizService {
   }
 
   private getQuestions(
-    categoryId: string,
+    categoryId: number,
     difficulty: Difficulty,
     amount: number
   ): Observable<Question[]> {
