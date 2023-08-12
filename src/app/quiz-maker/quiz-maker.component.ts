@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, combineLatest, map } from 'rxjs';
 import { Category, Difficulty, Question } from '../data.models';
 import { QuizService } from '../quiz.service';
 
@@ -14,20 +14,47 @@ export class QuizMakerComponent {
 
   difficulties = ['Easy', 'Medium', 'Hard'];
 
+  currentCategory?: number;
+  currentDifficulty?: Difficulty;
+
   transformerFn = (category: Category) => category.name;
 
   constructor(protected quizService: QuizService) {
     this.categories$ = quizService.getAllCategories();
   }
 
-  createQuiz(cat?: string, difficulty?: string): void {
-    if (!cat || !difficulty) {
+  createQuiz(
+    categoryId?: number,
+    subCategoryId?: number,
+    difficulty?: string
+  ): void {
+    // On doit avoir une catégorie, une difficulté.
+    // Et si la catégorie a un sous-categorie (id == -1), il faut que la sous-categorie soit alimentée
+    if (!categoryId || !difficulty || (categoryId === -1 && !subCategoryId)) {
       return;
     }
 
+    this.currentCategory = categoryId !== -1 ? categoryId : subCategoryId;
+    this.currentDifficulty = difficulty as Difficulty;
+
     this.questions$ = this.quizService.createQuiz(
-      cat,
-      difficulty as Difficulty
+      '' + this.currentCategory,
+      this.currentDifficulty
+    );
+  }
+
+  changeQuestion(index: number): void {
+    this.questions$ = combineLatest([
+      this.questions$,
+      this.quizService.getQuestion(
+        '' + this.currentCategory,
+        this.currentDifficulty!
+      ),
+    ]).pipe(
+      map(([questions, newQuestion]) => {
+        questions[index] = newQuestion[0];
+        return questions;
+      })
     );
   }
 }

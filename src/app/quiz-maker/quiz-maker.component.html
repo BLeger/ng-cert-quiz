@@ -1,15 +1,5 @@
 <div class="row">
   <div class="col-sm-11">
-    <!--<select #category id="categorySelect">
-      <option>Select category</option>
-      <option
-        [value]="category.id"
-        *ngFor="let category of categories$ | async"
-      >
-        {{ category.name }}
-      </option>
-    </select>-->
-
     <app-auto-filter
       #categoryFilter
       id="categoryFilter"
@@ -19,23 +9,30 @@
     ></app-auto-filter>
 
     <app-auto-filter
-      #difficultyFilter
-      id="difficultyFilter"
-      [dataset]="difficulties"
-      placeholder="Select difficulty"
+      [hidden]="(categoryFilter.value?.children ?? []).length === 0"
+      #subCategoryFilter
+      id="subCategoryFilter"
+      [dataset]="categoryFilter.value?.children ?? []"
+      [transformer]="transformerFn"
+      placeholder="Select subcategory"
     ></app-auto-filter>
 
-    <!-- <select #difficulty id="difficultySelect">
+    <select #difficulty id="difficultySelect">
       <option>Select difficulty</option>
       <option>Easy</option>
       <option>Medium</option>
       <option>Hard</option>
-    </select> -->
+    </select>
+
     <button
       class="primary"
       id="createBtn"
       (click)="
-        createQuiz('' + categoryFilter.value?.id, difficultyFilter.value)
+        createQuiz(
+          categoryFilter.value?.id,
+          subCategoryFilter.value?.id,
+          difficulty.value
+        )
       "
     >
       Create
@@ -43,5 +40,8 @@
   </div>
 </div>
 <div class="row">
-  <app-quiz [questions]="questions$ | async"></app-quiz>
+  <app-quiz
+    [questions]="questions$ | async"
+    (changeQuestionAsked)="changeQuestion($event)"
+  ></app-quiz>
 </div>

@@ -1,6 +1,12 @@
+export interface ApiCategory {
+  id: number;
+  name: string;
+}
+
 export interface Category {
   id: number;
   name: string;
+  children: Category[];
 }
 
 export interface ApiQuestion {
@@ -25,5 +31,4 @@ export interface Results {
   score: number;
 }
 
-
-export type Difficulty = "Easy" | "Medium" | "Hard";
+export type Difficulty = 'Easy' | 'Medium' | 'Hard';
