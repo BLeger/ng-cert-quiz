@@ -7,9 +7,10 @@
   position: absolute;
   top: 46px;
   left: 4px;
-  max-width: 200px;
+  max-width: 220px;
   max-height: 300px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   background-color: white;
 }
 
@@ -17,13 +18,14 @@
   background: none;
   margin: 0px;
   width: 100%;
-  padding: 8px;
-}
-
-.autocomplete-panel .autocomplete-option.active {
-  background-color: red;
+  padding: 8px 20px;
 }
 
 .autocomplete-panel .autocomplete-option:hover {
-  background-color: grey;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.autocomplete-panel .autocomplete-option.active {
+  background-color: #1073fa;
+  color: white;
 }

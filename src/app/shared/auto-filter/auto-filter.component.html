@@ -24,6 +24,7 @@
       class="autocomplete-option"
       role="option"
       (click)="select(opt)"
+      appScrollable
       [innerHTML]="opt.label | highlight : filterControl.value"
       [class.active]="opt.active"
     ></div>

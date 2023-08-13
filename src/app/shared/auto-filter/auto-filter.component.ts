@@ -5,8 +5,11 @@ import {
   HostListener,
   Input,
   OnChanges,
+  OnInit,
   Output,
+  QueryList,
   SimpleChanges,
+  ViewChildren,
 } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import {
@@ -17,11 +20,11 @@ import {
   startWith,
   tap,
 } from 'rxjs';
+import { ScrollableDirective } from '../directives/scrollable.directive';
 
 // TODO :
 // * Améliorer le positionnement CSS
 // * Implémenter ControlValueAccessor
-// * Afficher tous les résultats avec un scroll ?
 
 interface IOption<T> {
   value: T;
@@ -34,8 +37,10 @@ interface IOption<T> {
   templateUrl: './auto-filter.component.html',
   styleUrls: ['./auto-filter.component.css'],
 })
-export class AutoFilterComponent<T> implements OnChanges {
+export class AutoFilterComponent<T> implements OnInit, OnChanges {
   static defaultId = 0;
+
+  @ViewChildren(ScrollableDirective) items?: QueryList<ScrollableDirective>;
 
   _isPanelOpen = false;
 
@@ -111,6 +116,15 @@ export class AutoFilterComponent<T> implements OnChanges {
     this.listboxId = `listbox_${this.componentId}`;
   }
 
+  ngOnInit(): void {
+    // Remet à 0 l'option active quand on écrit
+    this.filterControl.valueChanges.subscribe({
+      next: () => {
+        this.activeSubject.next(0);
+      },
+    });
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['options']) {
       this.optionsSubject.next(
@@ -150,6 +164,13 @@ export class AutoFilterComponent<T> implements OnChanges {
     }
   }
 
+  private scrollToOption(index: number): void {
+    const items = this.items?.toArray();
+    if (items && items?.length >= index) {
+      items[index]?.scrollTo();
+    }
+  }
+
   @HostListener('document:click', ['$event'])
   onClick(event: any) {
     // Si on clic en dehors du composant
@@ -168,6 +189,7 @@ export class AutoFilterComponent<T> implements OnChanges {
     const activeIndex = this.activeSubject.value;
     if (activeIndex < this.filteredOptionsCount - 1) {
       this.activeSubject.next(activeIndex + 1);
+      this.scrollToOption(activeIndex + 1);
     }
   }
 
@@ -178,6 +200,7 @@ export class AutoFilterComponent<T> implements OnChanges {
     const activeIndex = this.activeSubject.value;
     if (activeIndex > 0) {
       this.activeSubject.next(activeIndex - 1);
+      this.scrollToOption(activeIndex - 1);
     }
   }
 

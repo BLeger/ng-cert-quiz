@@ -1,6 +1,6 @@
-import { Component, inject, Input } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, inject, Input, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { Difficulty, Question } from '../data.models';
 import { QuizService } from '../quiz.service';
 
@@ -9,7 +9,7 @@ import { QuizService } from '../quiz.service';
   templateUrl: './quiz.component.html',
   styleUrls: ['./quiz.component.css'],
 })
-export class QuizComponent {
+export class QuizComponent implements OnDestroy {
   allowQuestionChange = true;
 
   @Input()
@@ -22,22 +22,29 @@ export class QuizComponent {
   quizService = inject(QuizService);
   router = inject(Router);
 
+  subscriptions = new Subscription();
+
   changeQuestion(index: number): void {
     if (!this.allowQuestionChange) {
       return;
     }
     this.allowQuestionChange = false;
 
-    this.quizService
-      .getQuestion(this.categoryId!, this.difficulty!)
-      .pipe(takeUntilDestroyed())
-      .subscribe({
-        next: (newQuestion) => {
-          if (newQuestion) {
-            this.questions![index] = newQuestion;
-          }
-        },
-      });
+    this.subscriptions.add(
+      this.quizService
+        .getQuestion(this.categoryId!, this.difficulty!)
+        .subscribe({
+          next: (newQuestion) => {
+            if (newQuestion) {
+              this.questions![index] = newQuestion;
+            }
+          },
+        })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
   submit(): void {
