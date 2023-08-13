@@ -5,13 +5,27 @@
     [formControl]="filterControl"
     (focus)="onFocus()"
     [placeholder]="placeholder"
+    role="combobox"
+    [attr.aria-expanded]="isPanelOpen"
+    [attr.aria-controls]="listboxId"
+    aria-autocomplete="both"
+    aria-haspopup="listbox"
   />
 
-  <div *ngIf="isPanelOpen" class="autocomplete-panel">
-    <button
-      *ngFor="let opt of filteredOptions$ | async; trackBy: trackById"
+  <div
+    *ngIf="isPanelOpen"
+    class="autocomplete-panel"
+    role="listbox"
+    tabindex="-1"
+    [id]="listboxId"
+  >
+    <div
+      *ngFor="let opt of filteredOptions$ | async; trackBy: trackByLabel"
+      class="autocomplete-option"
+      role="option"
       (click)="select(opt)"
       [innerHTML]="opt.label | highlight : filterControl.value"
-    ></button>
+      [class.active]="opt.active"
+    ></div>
   </div>
 </div>

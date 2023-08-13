@@ -12,21 +12,15 @@ import { FormControl } from '@angular/forms';
 import {
   BehaviorSubject,
   combineLatest,
-  debounceTime,
   map,
+  shareReplay,
   startWith,
+  tap,
 } from 'rxjs';
 
 // TODO :
 // * Améliorer le positionnement CSS
 // * Implémenter ControlValueAccessor
-// * Mieux détecter l'arrivée du dataset
-// * Rename dataset
-// * Gérer flèches haut / bas / entréé
-// * Echap pour fermer
-// * aria
-// * Disabled
-// * Remplacer ngModel par un FormControl pour debounce ?
 // * Afficher tous les résultats avec un scroll ?
 
 interface IOption<T> {
@@ -41,6 +35,8 @@ interface IOption<T> {
   styleUrls: ['./auto-filter.component.css'],
 })
 export class AutoFilterComponent<T> implements OnChanges {
+  static defaultId = 0;
+
   _isPanelOpen = false;
 
   public get isPanelOpen(): boolean {
@@ -52,18 +48,28 @@ export class AutoFilterComponent<T> implements OnChanges {
     this._isPanelOpen ? this.opened.emit() : this.closed.emit();
   }
 
-  private subj = new BehaviorSubject<IOption<T>[]>([]);
-  options$ = this.subj.asObservable();
-
   public filterControl = new FormControl('', { nonNullable: true });
 
+  private optionsSubject = new BehaviorSubject<IOption<T>[]>([]);
+  private activeSubject = new BehaviorSubject<number>(0);
+
+  private activeOption?: IOption<T>;
+  private filteredOptionsCount = 0;
+
   filteredOptions$ = combineLatest([
-    this.options$,
-    this.filterControl.valueChanges.pipe(startWith(''), debounceTime(100)),
+    this.optionsSubject.asObservable(),
+    this.filterControl.valueChanges.pipe(startWith(''), shareReplay()),
+    this.activeSubject.asObservable(),
   ]).pipe(
-    map(([options, filter]) =>
-      options.filter((opt) => this.filterFn(opt, filter))
-    )
+    map(([options, filter, activeIndex]) =>
+      options
+        .filter((opt) => this.filterFn(opt, filter))
+        .map((opt, index) => ({ ...opt, active: index === activeIndex }))
+    ),
+    tap((options) => {
+      this.activeOption = options.find((opt) => opt.active);
+      this.filteredOptionsCount = options.length;
+    })
   );
 
   private _value?: T;
@@ -73,6 +79,13 @@ export class AutoFilterComponent<T> implements OnChanges {
   }
   public get value(): T | undefined {
     return this._value;
+  }
+
+  public componentId: number;
+  public listboxId: string;
+
+  @Input() set disabled(disabled: boolean) {
+    disabled ? this.filterControl.disable() : this.filterControl.enable();
   }
 
   @Input({ required: true }) options!: T[] | null;
@@ -89,14 +102,18 @@ export class AutoFilterComponent<T> implements OnChanges {
   @Output() opened = new EventEmitter<void>();
   @Output() closed = new EventEmitter<void>();
 
-  @Input() selected?: T;
+  @Input() selected?: T; // TODO ?
   @Output() selectedChange = new EventEmitter<T>();
 
-  constructor(private elementRef: ElementRef) {}
+  constructor(private elementRef: ElementRef) {
+    AutoFilterComponent.defaultId++;
+    this.componentId = AutoFilterComponent.defaultId;
+    this.listboxId = `listbox_${this.componentId}`;
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['options']) {
-      this.subj.next(
+      this.optionsSubject.next(
         this.options?.map(
           (opt) =>
             ({
@@ -110,21 +127,27 @@ export class AutoFilterComponent<T> implements OnChanges {
   }
 
   select(option: IOption<T>): void {
-    this.filterControl.setValue(option.label, { emitEvent: false });
+    this.filterControl.setValue(option.label);
     this.value = option.value;
     this.isPanelOpen = false;
-  }
-
-  onFocus(): void {
-    this.isPanelOpen = true;
   }
 
   private findOptionsFromFilter(filter: string): T | undefined {
     return this.options?.find((opt) => this.displayFn(opt) === filter);
   }
 
-  trackById(index: number, item: IOption<T>): string {
+  trackByLabel(index: number, item: IOption<T>): string {
     return item.label;
+  }
+
+  private closePanel(): void {
+    this.isPanelOpen = false;
+    const option = this.findOptionsFromFilter(this.filterControl.value);
+    if (option) {
+      this.value = option;
+    } else {
+      this.filterControl.setValue('');
+    }
   }
 
   @HostListener('document:click', ['$event'])
@@ -134,13 +157,47 @@ export class AutoFilterComponent<T> implements OnChanges {
       this.isPanelOpen &&
       !this.elementRef.nativeElement.contains(event.target)
     ) {
-      this.isPanelOpen = false;
-      const option = this.findOptionsFromFilter(this.filterControl.value);
-      if (option) {
-        this.value = option;
-      } else {
-        this.filterControl.setValue('');
-      }
+      this.closePanel();
     }
+  }
+
+  @HostListener('keydown.arrowdown', ['$event'])
+  onArrowDown($event: KeyboardEvent) {
+    $event.preventDefault();
+
+    const activeIndex = this.activeSubject.value;
+    if (activeIndex < this.filteredOptionsCount - 1) {
+      this.activeSubject.next(activeIndex + 1);
+    }
+  }
+
+  @HostListener('keydown.arrowup', ['$event'])
+  onArrowUp($event: KeyboardEvent) {
+    $event.preventDefault();
+
+    const activeIndex = this.activeSubject.value;
+    if (activeIndex > 0) {
+      this.activeSubject.next(activeIndex - 1);
+    }
+  }
+
+  @HostListener('keydown.enter', ['$event'])
+  onEnter($event: KeyboardEvent) {
+    $event.preventDefault();
+
+    this.select(this.activeOption!);
+  }
+
+  onFocus(): void {
+    this.isPanelOpen = true;
+  }
+
+  /**
+   * Ferme le panel quand on navige vers un autre input ou appuie sur echap
+   */
+  @HostListener('keydown.tab')
+  @HostListener('keydown.escape')
+  onTabulationOrEscape() {
+    this.closePanel();
   }
 }

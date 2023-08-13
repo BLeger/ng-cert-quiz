@@ -13,13 +13,17 @@
   background-color: white;
 }
 
-.autocomplete-panel button {
+.autocomplete-panel .autocomplete-option {
   background: none;
   margin: 0px;
   width: 100%;
   padding: 8px;
 }
 
-.autocomplete-panel button:hover {
+.autocomplete-panel .autocomplete-option.active {
+  background-color: red;
+}
+
+.autocomplete-panel .autocomplete-option:hover {
   background-color: grey;
 }
