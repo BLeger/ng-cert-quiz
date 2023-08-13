@@ -145,7 +145,6 @@ export class AutoFilterComponent<T>
       this.filterControl.valueChanges.subscribe({
         next: (value) => {
           this.activeSubject.next(0);
-          this.isPanelOpen = true;
           if (value && value.length > 0) {
             this.onTouch();
           }
