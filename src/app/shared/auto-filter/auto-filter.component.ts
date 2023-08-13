@@ -8,13 +8,32 @@ import {
   Output,
   SimpleChanges,
 } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { FormControl } from '@angular/forms';
+import {
+  BehaviorSubject,
+  combineLatest,
+  debounceTime,
+  map,
+  startWith,
+} from 'rxjs';
 
 // TODO :
 // * Améliorer le positionnement CSS
-// * Ne plus avoir besoin du timer au blur => ok
-// * Donner accès à l'input (ControlValueAccessor ? ou directive ?)
+// * Implémenter ControlValueAccessor
 // * Mieux détecter l'arrivée du dataset
+// * Rename dataset
+// * Gérer flèches haut / bas / entréé
+// * Echap pour fermer
+// * aria
+// * Disabled
+// * Remplacer ngModel par un FormControl pour debounce ?
+// * Afficher tous les résultats avec un scroll ?
+
+interface IOption<T> {
+  value: T;
+  label: string;
+  active: boolean;
+}
 
 @Component({
   selector: 'app-auto-filter',
@@ -23,7 +42,6 @@ import { BehaviorSubject } from 'rxjs';
 })
 export class AutoFilterComponent<T> implements OnChanges {
   _isPanelOpen = false;
-  private init = false;
 
   public get isPanelOpen(): boolean {
     return this._isPanelOpen;
@@ -34,10 +52,19 @@ export class AutoFilterComponent<T> implements OnChanges {
     this._isPanelOpen ? this.opened.emit() : this.closed.emit();
   }
 
-  private subj = new BehaviorSubject<string[]>([]);
+  private subj = new BehaviorSubject<IOption<T>[]>([]);
   options$ = this.subj.asObservable();
 
-  public filter = '';
+  public filterControl = new FormControl('', { nonNullable: true });
+
+  filteredOptions$ = combineLatest([
+    this.options$,
+    this.filterControl.valueChanges.pipe(startWith(''), debounceTime(100)),
+  ]).pipe(
+    map(([options, filter]) =>
+      options.filter((opt) => this.filterFn(opt, filter))
+    )
+  );
 
   private _value?: T;
   private set value(value: T | undefined) {
@@ -48,10 +75,16 @@ export class AutoFilterComponent<T> implements OnChanges {
     return this._value;
   }
 
-  @Input({ required: true }) dataset!: T[] | null;
+  @Input({ required: true }) options!: T[] | null;
   @Input() placeholder = '';
 
-  @Input() transformer: (option: T) => string = (option: T) => `${option}`;
+  // Par défaut, affiche l'option en tant que string
+  @Input() displayFn: (option: T) => string = (option: T) => `${option}`;
+  // Par défaut, filtre le label en lowercase
+  @Input() filterFn: (option: IOption<T>, filter: string) => boolean = (
+    option: IOption<T>,
+    filter: string
+  ) => option.label.toLowerCase().includes(filter.toLowerCase());
 
   @Output() opened = new EventEmitter<void>();
   @Output() closed = new EventEmitter<void>();
@@ -62,26 +95,23 @@ export class AutoFilterComponent<T> implements OnChanges {
   constructor(private elementRef: ElementRef) {}
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['dataset']) {
-      if (!this.init) {
-        this.init = true;
-      }
-      this.updateOptions();
+    if (changes['options']) {
+      this.subj.next(
+        this.options?.map(
+          (opt) =>
+            ({
+              value: opt,
+              label: this.displayFn(opt),
+              active: false,
+            } as IOption<T>)
+        ) ?? []
+      );
     }
   }
 
-  updateOptions(): void {
-    this.subj.next(
-      (this.dataset?.map((opt) => this.transformer(opt)) ?? []).filter((opt) =>
-        opt.toLowerCase().includes(this.filter.toLowerCase())
-      )
-    );
-  }
-
-  select(filter: string): void {
-    this.filter = filter;
-    this.updateOptions();
-    this.value = this.findOptionsFromFilter(filter);
+  select(option: IOption<T>): void {
+    this.filterControl.setValue(option.label, { emitEvent: false });
+    this.value = option.value;
     this.isPanelOpen = false;
   }
 
@@ -90,7 +120,11 @@ export class AutoFilterComponent<T> implements OnChanges {
   }
 
   private findOptionsFromFilter(filter: string): T | undefined {
-    return this.dataset?.find((opt) => this.transformer(opt) === filter);
+    return this.options?.find((opt) => this.displayFn(opt) === filter);
+  }
+
+  trackById(index: number, item: IOption<T>): string {
+    return item.label;
   }
 
   @HostListener('document:click', ['$event'])
@@ -101,11 +135,11 @@ export class AutoFilterComponent<T> implements OnChanges {
       !this.elementRef.nativeElement.contains(event.target)
     ) {
       this.isPanelOpen = false;
-      const option = this.findOptionsFromFilter(this.filter);
+      const option = this.findOptionsFromFilter(this.filterControl.value);
       if (option) {
         this.value = option;
       } else {
-        this.filter = '';
+        this.filterControl.setValue('');
       }
     }
   }

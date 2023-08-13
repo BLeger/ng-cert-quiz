@@ -2,16 +2,16 @@
   <input
     type="text"
     name="filter"
-    [(ngModel)]="filter"
-    (ngModelChange)="updateOptions()"
+    [formControl]="filterControl"
     (focus)="onFocus()"
     [placeholder]="placeholder"
   />
+
   <div *ngIf="isPanelOpen" class="autocomplete-panel">
     <button
-      *ngFor="let opt of options$ | async"
+      *ngFor="let opt of filteredOptions$ | async; trackBy: trackById"
       (click)="select(opt)"
-      [innerHTML]="opt | highlight : filter"
+      [innerHTML]="opt.label | highlight : filterControl.value"
     ></button>
   </div>
 </div>

@@ -17,7 +17,7 @@ export class QuizMakerComponent {
   currentCategory?: number;
   currentDifficulty?: Difficulty;
 
-  transformerFn = (category: Category) => category.name;
+  displayFn = (category: Category) => category.name;
 
   constructor(protected quizService: QuizService) {
     this.categories$ = quizService.getAllCategories();

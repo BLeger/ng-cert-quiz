@@ -3,8 +3,8 @@
     <app-auto-filter
       #categoryFilter
       id="categoryFilter"
-      [dataset]="categories$ | async"
-      [transformer]="transformerFn"
+      [options]="categories$ | async"
+      [displayFn]="displayFn"
       placeholder="Select category"
     ></app-auto-filter>
 
@@ -12,8 +12,8 @@
       [hidden]="(categoryFilter.value?.children ?? []).length === 0"
       #subCategoryFilter
       id="subCategoryFilter"
-      [dataset]="categoryFilter.value?.children ?? []"
-      [transformer]="transformerFn"
+      [options]="categoryFilter.value?.children ?? []"
+      [displayFn]="displayFn"
       placeholder="Select subcategory"
     ></app-auto-filter>
 
