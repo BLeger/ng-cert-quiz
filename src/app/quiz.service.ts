@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { map, Observable, shareReplay } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import {
   ApiCategory,
   ApiQuestion,
@@ -66,10 +66,7 @@ export class QuizService {
           this.API_URL
         }/api.php?amount=${amount}&category=${categoryId}&difficulty=${difficulty.toLowerCase()}&type=multiple`
       )
-      .pipe(
-        map((res) => this.transformQuestions(res.results)),
-        shareReplay()
-      );
+      .pipe(map((res) => this.transformQuestions(res.results)));
   }
 
   private transformQuestions(questions: ApiQuestion[]): Question[] {
@@ -82,16 +79,17 @@ export class QuizService {
     return quiz;
   }
 
+  /**
+   * Transforms an ApiCategory array to a hierarchy of Categories
+   */
   private stucturizeCategories(categories: ApiCategory[]): Category[] {
     const structuredCategories: Category[] = [];
     for (const category of categories) {
+      // If there is no :, then it's a simple category (no children)
       if (!category.name.includes(': ')) {
         structuredCategories.push({ ...category, children: [] });
       } else {
         const names = category.name.split(': ');
-        const parent = structuredCategories.find(
-          (cat) => cat.name === names[0]
-        );
 
         const subcategory = {
           id: category.id,
@@ -99,9 +97,16 @@ export class QuizService {
           children: [],
         };
 
+        // Check if there already is a parent with this name
+        const parent = structuredCategories.find(
+          (cat) => cat.name === names[0]
+        );
+
+        // if so, push a new subcategory in the parent
         if (parent) {
           parent.children.push(subcategory);
         } else {
+          // Otherwise, create a new category with a child
           structuredCategories.push({
             id: -1,
             name: names[0],

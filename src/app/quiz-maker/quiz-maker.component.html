@@ -1,42 +1,51 @@
 <div class="row">
   <div class="col-sm-11">
-    <app-auto-filter
-      #categoryFilter
-      id="categoryFilter"
-      [options]="categories$ | async"
-      [displayFn]="displayFn"
-      placeholder="Select category"
-    ></app-auto-filter>
+    <form [formGroup]="form" #formDirective="ngForm" (ngSubmit)="createQuiz()">
+      <app-auto-filter
+        id="categoryFilter"
+        [options]="categories$ | async"
+        [displayFn]="displayFn"
+        placeholder="Select category"
+        formControlName="category"
+      ></app-auto-filter>
 
-    <app-auto-filter
-      [hidden]="(categoryFilter.value?.children ?? []).length === 0"
-      #subCategoryFilter
-      id="subCategoryFilter"
-      [options]="categoryFilter.value?.children ?? []"
-      [displayFn]="displayFn"
-      placeholder="Select subcategory"
-    ></app-auto-filter>
+      <app-auto-filter
+        [hidden]="subCategories.length === 0"
+        id="subCategoryFilter"
+        [options]="subCategories"
+        [displayFn]="displayFn"
+        placeholder="Select subcategory"
+        formControlName="subcategory"
+      ></app-auto-filter>
 
-    <select #difficulty id="difficultySelect">
-      <option>Select difficulty</option>
-      <option>Easy</option>
-      <option>Medium</option>
-      <option>Hard</option>
-    </select>
+      <select #difficulty id="difficultySelect" formControlName="difficulty">
+        <option [value]="''" disabled>Select difficulty</option>
+        <option>Easy</option>
+        <option>Medium</option>
+        <option>Hard</option>
+      </select>
 
-    <button
-      class="primary"
-      id="createBtn"
-      (click)="
-        createQuiz(
-          categoryFilter.value?.id,
-          subCategoryFilter.value?.id,
-          difficulty.value
-        )
-      "
-    >
-      Create
-    </button>
+      <button class="primary" id="createBtn">Create</button>
+
+      <p
+        class="error"
+        *ngIf="formDirective.submitted && form.controls.category.invalid"
+      >
+        Please select a category
+      </p>
+      <p
+        class="error"
+        *ngIf="formDirective.submitted && form.controls.subcategory.invalid"
+      >
+        Please select a subcategory
+      </p>
+      <p
+        class="error"
+        *ngIf="formDirective.submitted && form.controls.difficulty.invalid"
+      >
+        Please select a difficulty
+      </p>
+    </form>
   </div>
 </div>
 <div class="row">

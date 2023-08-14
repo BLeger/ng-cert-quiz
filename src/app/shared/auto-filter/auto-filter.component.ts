@@ -59,9 +59,9 @@ export class AutoFilterComponent<T>
   @Input({ required: true }) options!: T[] | null;
   @Input() placeholder = '';
 
-  // Par défaut, affiche l'option en tant que string
+  // By default, displays the option as a string
   @Input() displayFn: (option: T) => string = (option: T) => `${option}`;
-  // Par défaut, filtre le label en lowercase
+  // By defaults, filters by inclusion, non case sensitive
   @Input() filterFn: (option: IOption<T>, filter: string) => boolean = (
     option: IOption<T>,
     filter: string
@@ -117,6 +117,7 @@ export class AutoFilterComponent<T>
   private set value(value: T | undefined) {
     this._value = value;
     this.selectedChange.emit(value);
+    this.onChange(value);
   }
   public get value(): T | undefined {
     return this._value;
@@ -128,7 +129,7 @@ export class AutoFilterComponent<T>
   public listboxId: string;
 
   // Control Value Accessor
-  private onChange: (option: T) => void = (option: T) => {};
+  private onChange: (option: T | undefined) => void = () => {};
   private onTouch: () => void = () => {};
 
   private subscriptions = new Subscription();
@@ -140,7 +141,7 @@ export class AutoFilterComponent<T>
   }
 
   ngOnInit(): void {
-    // Remet à 0 l'option active quand on écrit
+    // Resets the active (showed in blue) option when typing
     this.subscriptions.add(
       this.filterControl.valueChanges.subscribe({
         next: (value) => {
@@ -176,15 +177,14 @@ export class AutoFilterComponent<T>
     }
   }
 
-  // Sélectionne une option
+  // Selects an option
   select(option: IOption<T>): void {
     this.filterControl.setValue(option.label);
     this.value = option.value;
-    this.onChange(this.value);
     this.isPanelOpen = false;
   }
 
-  // Sélectionne une option sans le wrapper
+  // Selects an option without the IOption wrapper
   private selectWithoutWrapper(option: T): void {
     this.select({
       active: false,
@@ -205,19 +205,26 @@ export class AutoFilterComponent<T>
     if (option) {
       this.selectWithoutWrapper(option);
     } else {
-      this.filterControl.setValue('');
+      this.reset();
     }
+  }
+
+  private reset(): void {
+    this.filterControl.setValue('');
+    this.value = undefined;
   }
 
   // -- Control Value Accessor --
 
-  writeValue(option: T): void {
-    if (this.options?.includes(option)) {
+  writeValue(option: T | undefined): void {
+    if (option && this.options?.includes(option)) {
       this.selectWithoutWrapper(option);
+    } else {
+      this.reset();
     }
   }
 
-  registerOnChange(fn: (option: T) => void): void {
+  registerOnChange(fn: (option: T | undefined) => void): void {
     this.onChange = fn;
   }
 
@@ -225,7 +232,7 @@ export class AutoFilterComponent<T>
     this.onTouch = fn;
   }
 
-  setDisabledState?(isDisabled: boolean): void {
+  setDisabledState(isDisabled: boolean): void {
     this.disabled = isDisabled;
   }
 
@@ -233,7 +240,6 @@ export class AutoFilterComponent<T>
 
   @HostListener('document:click', ['$event'])
   onClick(event: any) {
-    // Si on clic en dehors du composant
     if (
       this.isPanelOpen &&
       !this.elementRef.nativeElement.contains(event.target)
@@ -277,7 +283,9 @@ export class AutoFilterComponent<T>
   onEnter($event: KeyboardEvent) {
     $event.preventDefault();
 
-    this.select(this.activeOption!);
+    if (this.activeOption) {
+      this.select(this.activeOption);
+    }
   }
 
   onFocus(): void {
@@ -285,7 +293,7 @@ export class AutoFilterComponent<T>
   }
 
   /**
-   * Ferme le panel quand on navige vers un autre input ou appuie sur echap
+   * Closes the panel when navigating to another field (tabulation) or typing escape
    */
   @HostListener('keydown.tab')
   @HostListener('keydown.escape')

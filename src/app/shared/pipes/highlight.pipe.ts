@@ -13,16 +13,16 @@ export class HighlightPipe implements PipeTransform {
     }
 
     return this.domSanitizer.sanitize(
-      SecurityContext.HTML, // TODO : vérifier si c'est le meilleur contexte
+      SecurityContext.HTML,
       this.highlight(value, highlight)
     );
   }
 
   private highlight(value: string, highlight: string): string {
-    // Regex qui capture la portion de texte à highlight
+    // Regex to capture the portions of text to be highlighted
     const regex = new RegExp(`(${highlight})`, 'gi');
 
-    // Remplace la capture par elle même entourée de <b>
+    // Replaces the captured strings with themselves wrapped inside <b>
     return value.replace(regex, `<b>$1</b>`);
   }
 }
